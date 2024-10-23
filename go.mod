@@ -1,0 +1,1 @@
+module go-tuckshop-manager
