@@ -1,14 +1,24 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"go-tuckshop-manager/repositories"
 	"go-tuckshop-manager/services"
+	"go-tuckshop-manager/services/cmdline"
 )
 
 func main() {
 	services.InitEnvProperties()
 	user, email, phone := parseInputUserConfigFlags()
+	_, client := repositories.GetConnection()
+	defer func() {
+		if err := client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+
 	fmt.Printf("Running the application for user - %s, email - %s, phone - %s\n", user, email, phone)
 	args := flag.Args()
 	fmt.Println(args)
@@ -19,23 +29,26 @@ func main() {
 		fileString, _ := services.ReadReadmeFile("README.md")
 		fmt.Println(fileString)
 	default:
-		switch args[0] {
-		case "get":
-			if argCount == 1 {
-				fmt.Println("hello")
+		command := args[0]
+		switch command {
+		case "shop":
+			subCommand := args[1]
+			switch subCommand {
+			case "get":
+				fmt.Println(cmdline.GetShop())
+			case "refresh":
+				cmdline.UpdateShop()
 			}
 		case "order":
-			fmt.Println("order")
-		case "delete":
-			if argCount != 2 {
-				fmt.Println("Invalid number of arguments")
+			subCommand := args[1]
+			switch subCommand {
+			case "history":
+			case "place":
+			case "setup":
+				cmdline.CreateOrderTemplateFlow()
 			}
-			services.Delete(args[1])
 		case "configure":
-			if argCount != 3 {
-				fmt.Println("Invalid number of arguments")
-			}
-			services.Configure(args[1], args[2])
+			cmdline.ConfigurationFlow(args)
 		}
 	}
 }
